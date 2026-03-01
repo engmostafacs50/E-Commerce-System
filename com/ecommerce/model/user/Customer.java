@@ -4,8 +4,8 @@ import java.util.List;
 
 import com.ecommerce.model.cart.Cart;
 import com.ecommerce.model.order.Order;
-
-public class Customer extends User{
+import java.io.Serializable;
+public class Customer extends User implements Serializable {
     private final  Cart cart ; 
     public Customer(String name , String email)
     {

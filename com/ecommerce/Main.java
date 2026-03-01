@@ -105,6 +105,7 @@ public class Main {
             inventoryManager.saveToFile();
         } catch (Exception e) {
             System.out.println("Failed to save data!");
+            e.printStackTrace(); 
         }
     }
 

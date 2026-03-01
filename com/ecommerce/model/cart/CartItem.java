@@ -1,8 +1,10 @@
 package com.ecommerce.model.cart;
 
+import java.io.Serializable;
+
 import com.ecommerce.model.product.Product;
 
-public class CartItem {
+public class CartItem implements Serializable {
 
     private final Product product;
     private int quantity;
@@ -14,6 +16,8 @@ public class CartItem {
         this.product = product;
         this.quantity = quantity;
     }
+2
+
 
     public Product getProduct() {
         return product;

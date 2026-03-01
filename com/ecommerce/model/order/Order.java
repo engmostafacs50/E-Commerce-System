@@ -4,12 +4,13 @@ import com.ecommerce.model.cart.CartItem;
 import com.ecommerce.model.user.Customer;
 import com.ecommerce.payment.PaymentMethod;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class Order {
+public class Order implements Serializable{
     private final String  id ; 
     private final Customer customer ; 
     private final List<CartItem>items ; 

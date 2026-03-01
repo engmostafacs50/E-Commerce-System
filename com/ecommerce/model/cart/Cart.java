@@ -1,9 +1,11 @@
 package com.ecommerce.model.cart;
 import com.ecommerce.model.product.Product;
+
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Cart 
+public class Cart implements Serializable 
 {
     private final List<CartItem>items = new ArrayList<>();
     public void addProduct(Product product , int quantity)

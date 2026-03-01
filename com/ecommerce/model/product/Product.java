@@ -1,8 +1,9 @@
 package com.ecommerce.model.product;
 
 import java.util.UUID;
+import java.io.Serializable;
 
-public class Product {
+public class Product implements Serializable {
     private final String id ; 
     private String name ;
     private double price ; 

@@ -24,59 +24,97 @@ public class Main {
         InventoryManager inventoryManager = new InventoryManager();
 
         // =========================
-        // Welcome Screen
+        // Load previous state
         // =========================
-        System.out.println("=== Welcome to E-Commerce System ===");
-        System.out.println("Choose an option:");
-        System.out.println("1- Register");
-        System.out.println("2- Login");
-        int option = scanner.nextInt();
-        scanner.nextLine(); // consume newline
+        try {
+            authService.loadFromFile();
+            inventoryManager.loadFromFile();
+        } catch (Exception e) {
+            System.out.println("No previous data found. Starting fresh.");
+        }
 
-        User loggedUser = null;
+        while (true) {
+            System.out.println("\n=== Welcome to E-Commerce System ===");
+            System.out.println("Choose an option:");
+            System.out.println("1- Register");
+            System.out.println("2- Login");
+            System.out.println("3- Exit Program");
 
-        // =========================
-        // Register
-        // =========================
-        if (option == 1) {
-            System.out.println("Enter your name:");
-            String name = scanner.nextLine();
+            int option = scanner.nextInt();
+            scanner.nextLine();
 
-            System.out.println("Enter your email:");
-            String email = scanner.nextLine();
-
-            System.out.println("Are you Admin? (yes/no):");
-            String role = scanner.nextLine();
-
-            if (role.equalsIgnoreCase("yes")) {
-                loggedUser = new Admin(name, email);
-            } else {
-                loggedUser = new Customer(name, email);
+            if (option == 3) {
+                saveData(authService, inventoryManager);
+                System.out.println("Exiting program. Data saved.");
+                break;
             }
 
-            authService.register(loggedUser);
-            System.out.println("Registration successful!");
-        }
-        // =========================
-        // Login
-        // =========================
-        else if (option == 2) {
-            System.out.println("Enter your email to login:");
-            String email = scanner.nextLine();
-            loggedUser = authService.login(email);
-        }
+            User loggedUser = null;
 
-        System.out.println("Logged in as: " + loggedUser.getName() + " | Role: " + loggedUser.getRole());
+            // =========================
+            // Register
+            // =========================
+            if (option == 1) {
+                System.out.println("Enter your name:");
+                String name = scanner.nextLine();
 
-        // =========================
-        // Show Menu based on Role
-        // =========================
-        if (loggedUser.getRole().equals("ADMIN")) {
-            showAdminMenu(scanner, inventoryManager);
-        } else {
-            showCustomerMenu(scanner, (Customer) loggedUser, inventoryManager);
+                System.out.println("Enter your email:");
+                String email = scanner.nextLine();
+
+                System.out.println("Are you Admin? (yes/no):");
+                String role = scanner.nextLine();
+
+                if (role.equalsIgnoreCase("yes")) {
+                    loggedUser = new Admin(name, email);
+                } else {
+                    loggedUser = new Customer(name, email);
+                }
+
+                authService.register(loggedUser);
+                System.out.println("Registration successful! Please login now.");
+                continue;
+            }
+
+            // =========================
+            // Login
+            // =========================
+            if (option == 2) {
+                System.out.println("Enter your email to login:");
+                String email = scanner.nextLine();
+                loggedUser = authService.login(email);
+
+                if (loggedUser == null) {
+                    System.out.println("User not found! Try Registering first.");
+                    continue;
+                }
+            }
+
+            System.out.println("Logged in as: " + loggedUser.getName() + " | Role: " + loggedUser.getRole());
+
+            // =========================
+            // Show Menu based on Role
+            // =========================
+            if (loggedUser.getRole().equals("ADMIN")) {
+                showAdminMenu(scanner, inventoryManager);
+            } else {
+                showCustomerMenu(scanner, (Customer) loggedUser, inventoryManager);
+            }
+
+            // Save data after each session
+            saveData(authService, inventoryManager);
         }
+    }
 
+    // =========================
+    // Save Data Helper
+    // =========================
+    private static void saveData(AuthService authService, InventoryManager inventoryManager) {
+        try {
+            authService.saveToFile();
+            inventoryManager.saveToFile();
+        } catch (Exception e) {
+            System.out.println("Failed to save data!");
+        }
     }
 
     // =========================
@@ -88,7 +126,7 @@ public class Main {
             System.out.println("1- Add Product");
             System.out.println("2- Restock Product");
             System.out.println("3- Show Products");
-            System.out.println("4- Exit");
+            System.out.println("4- Exit Admin Menu");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
@@ -123,7 +161,23 @@ public class Main {
                         System.out.println(p.getId() + " | " + p.getName() + " | Price: " + p.getPrice() + " | Stock: " + p.getStock());
                     }
                 }
-                case 4 -> {
+                case 4 -> { // Show All Orders
+                            System.out.println("=== All Orders ===");
+                            AuthService authService = null;
+                            List<User> allUsers = authService.getAllUsers(); 
+                            for (User u : allUsers) {
+                                if (u instanceof Customer customer) {
+                                    List<Order> orders = customer.getOrderHistory();
+                                    if (!orders.isEmpty()) {
+                                        System.out.println("Customer: " + customer.getName());
+                                        for (Order o : orders) {
+                                            System.out.println("  Order ID: " + o.getId() + " | Status: " + o.getStatus() + " | Total: " + o.getTotalPrice());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                case 5 -> {
                     System.out.println("Exiting Admin Menu.");
                     return;
                 }
@@ -143,7 +197,7 @@ public class Main {
             System.out.println("3- View Cart");
             System.out.println("4- Checkout");
             System.out.println("5- Order History");
-            System.out.println("6- Exit");
+            System.out.println("6- Exit Customer Menu");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
@@ -194,12 +248,38 @@ public class Main {
                     customer.getCart().clear();
                     System.out.println("Checkout complete! Order Status: " + order.getStatus());
                 }
-                case 5 -> {
+                case 5 -> { // Order History
                     System.out.println("=== Order History ===");
-                    for (Order o : customer.getOrderHistory()) {
-                        System.out.println("Order ID: " + o.getId() + " | Status: " + o.getStatus() + " | Total: " + o.getTotalPrice());
-                    }
+                    List<Order> orders = customer.getOrderHistory();
+                    if (orders.isEmpty()) {
+                    System.out.println("No orders yet!");
+                    break;
                 }
+                    for (int i = 0; i < orders.size(); i++) {
+                     Order o = orders.get(i);
+                    System.out.println((i + 1) + "- Order ID: " + o.getId() + " | Status: " + o.getStatus() + " | Total: " + o.getTotalPrice());
+                    }
+
+                    System.out.println("Do you want to cancel an order? (yes/no)");
+                    String cancel = scanner.nextLine();
+                    if (cancel.equalsIgnoreCase("yes")) {
+                        System.out.println("Enter order number to cancel:");
+                        int orderIndex = scanner.nextInt() - 1;
+                        scanner.nextLine();
+                    if (orderIndex < 0 || orderIndex >= orders.size()) {
+                        System.out.println("Invalid order number!");
+                         break;
+            }
+
+        Order toCancel = orders.get(orderIndex);
+        try {
+            toCancel.cancelOrder();
+            System.out.println("Order canceled successfully!");
+        } catch (IllegalStateException e) {
+            System.out.println("Cannot cancel this order: " + e.getMessage());
+        }
+    }
+}
                 case 6 -> {
                     System.out.println("Exiting Customer Menu.");
                     return;
@@ -208,4 +288,5 @@ public class Main {
             }
         }
     }
+
 }

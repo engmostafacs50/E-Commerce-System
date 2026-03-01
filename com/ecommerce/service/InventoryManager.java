@@ -4,7 +4,10 @@ import com.ecommerce.model.product.Product;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InventoryManager {
+import java.io.*;
+
+
+public class InventoryManager implements Serializable {
 
     private List<Product> products = new ArrayList<>();
 
@@ -24,5 +27,21 @@ public class InventoryManager {
 
     public List<Product> getAllProducts() {
         return products;
+    }
+
+    public void saveToFile() throws IOException {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("inventory.ser"))) {
+            oos.writeObject(products);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public void loadFromFile() throws IOException, ClassNotFoundException {
+        File file = new File("inventory.ser");
+        if (!file.exists()) return;
+
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            products = (List<Product>) ois.readObject();
+        }
     }
 }

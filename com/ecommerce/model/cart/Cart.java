@@ -26,10 +26,10 @@ public class Cart implements Serializable
     }
     public double calculateTotal()
     {
-        double total = 0 ; 
+         double total = 0 ; 
         for(CartItem item : items)
         {
-            total += item.getProduct().getPrice() ; 
+            total += item.getProduct().getPrice() * item.getQuantity() ; 
         }
         return total ; 
     }

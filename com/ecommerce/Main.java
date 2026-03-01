@@ -22,10 +22,8 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         AuthService authService = new AuthService();
         InventoryManager inventoryManager = new InventoryManager();
-
-        // =========================
         // Load previous state
-        // =========================
+
         try {
             authService.loadFromFile();
             inventoryManager.loadFromFile();
@@ -51,9 +49,8 @@ public class Main {
 
             User loggedUser = null;
 
-            // =========================
+
             // Register
-            // =========================
             if (option == 1) {
                 System.out.println("Enter your name:");
                 String name = scanner.nextLine();
@@ -74,10 +71,7 @@ public class Main {
                 System.out.println("Registration successful! Please login now.");
                 continue;
             }
-
-            // =========================
             // Login
-            // =========================
             if (option == 2) {
                 System.out.println("Enter your email to login:");
                 String email = scanner.nextLine();
@@ -91,11 +85,9 @@ public class Main {
 
             System.out.println("Logged in as: " + loggedUser.getName() + " | Role: " + loggedUser.getRole());
 
-            // =========================
             // Show Menu based on Role
-            // =========================
             if (loggedUser.getRole().equals("ADMIN")) {
-                showAdminMenu(scanner, inventoryManager);
+                showAdminMenu(scanner, inventoryManager, authService);
             } else {
                 showCustomerMenu(scanner, (Customer) loggedUser, inventoryManager);
             }
@@ -105,9 +97,8 @@ public class Main {
         }
     }
 
-    // =========================
-    // Save Data Helper
-    // =========================
+  
+    // Save Data H
     private static void saveData(AuthService authService, InventoryManager inventoryManager) {
         try {
             authService.saveToFile();
@@ -117,16 +108,15 @@ public class Main {
         }
     }
 
-    // =========================
     // Admin Menu
-    // =========================
-    public static void showAdminMenu(Scanner scanner, InventoryManager inventoryManager) {
+    public static void showAdminMenu(Scanner scanner, InventoryManager inventoryManager, AuthService authService) {
         while (true) {
             System.out.println("\n=== Admin Menu ===");
             System.out.println("1- Add Product");
             System.out.println("2- Restock Product");
             System.out.println("3- Show Products");
-            System.out.println("4- Exit Admin Menu");
+            System.out.println("4- Show All Orders");
+            System.out.println("5- Exit Admin Menu");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
@@ -162,21 +152,20 @@ public class Main {
                     }
                 }
                 case 4 -> { // Show All Orders
-                            System.out.println("=== All Orders ===");
-                            AuthService authService = null;
-                            List<User> allUsers = authService.getAllUsers(); 
-                            for (User u : allUsers) {
-                                if (u instanceof Customer customer) {
-                                    List<Order> orders = customer.getOrderHistory();
-                                    if (!orders.isEmpty()) {
-                                        System.out.println("Customer: " + customer.getName());
-                                        for (Order o : orders) {
-                                            System.out.println("  Order ID: " + o.getId() + " | Status: " + o.getStatus() + " | Total: " + o.getTotalPrice());
-                                        }
-                                    }
+                    System.out.println("=== All Orders ===");
+                    List<User> allUsers = authService.getAllUsers();
+                    for (User u : allUsers) {
+                        if (u instanceof Customer customer) {
+                            List<Order> orders = customer.getOrderHistory();
+                            if (!orders.isEmpty()) {
+                                System.out.println("Customer: " + customer.getName());
+                                for (Order o : orders) {
+                                    System.out.println("  Order ID: " + o.getId() + " | Status: " + o.getStatus() + " | Total: " + o.getTotalPrice());
                                 }
                             }
                         }
+                    }
+                }
                 case 5 -> {
                     System.out.println("Exiting Admin Menu.");
                     return;
@@ -186,9 +175,7 @@ public class Main {
         }
     }
 
-    // =========================
     // Customer Menu
-    // =========================
     public static void showCustomerMenu(Scanner scanner, Customer customer, InventoryManager inventoryManager) {
         while (true) {
             System.out.println("\n=== Customer Menu ===");
@@ -196,7 +183,7 @@ public class Main {
             System.out.println("2- Add Product to Cart");
             System.out.println("3- View Cart");
             System.out.println("4- Checkout");
-            System.out.println("5- Order History");
+            System.out.println("5- Order History / Cancel Order");
             System.out.println("6- Exit Customer Menu");
 
             int choice = scanner.nextInt();
@@ -248,16 +235,16 @@ public class Main {
                     customer.getCart().clear();
                     System.out.println("Checkout complete! Order Status: " + order.getStatus());
                 }
-                case 5 -> { // Order History
+                case 5 -> { // Order History + Cancel
                     System.out.println("=== Order History ===");
                     List<Order> orders = customer.getOrderHistory();
                     if (orders.isEmpty()) {
-                    System.out.println("No orders yet!");
-                    break;
-                }
+                        System.out.println("No orders yet!");
+                        break;
+                    }
                     for (int i = 0; i < orders.size(); i++) {
-                     Order o = orders.get(i);
-                    System.out.println((i + 1) + "- Order ID: " + o.getId() + " | Status: " + o.getStatus() + " | Total: " + o.getTotalPrice());
+                        Order o = orders.get(i);
+                        System.out.println((i + 1) + "- Order ID: " + o.getId() + " | Status: " + o.getStatus() + " | Total: " + o.getTotalPrice());
                     }
 
                     System.out.println("Do you want to cancel an order? (yes/no)");
@@ -266,20 +253,20 @@ public class Main {
                         System.out.println("Enter order number to cancel:");
                         int orderIndex = scanner.nextInt() - 1;
                         scanner.nextLine();
-                    if (orderIndex < 0 || orderIndex >= orders.size()) {
-                        System.out.println("Invalid order number!");
-                         break;
-            }
+                        if (orderIndex < 0 || orderIndex >= orders.size()) {
+                            System.out.println("Invalid order number!");
+                            break;
+                        }
 
-        Order toCancel = orders.get(orderIndex);
-        try {
-            toCancel.cancelOrder();
-            System.out.println("Order canceled successfully!");
-        } catch (IllegalStateException e) {
-            System.out.println("Cannot cancel this order: " + e.getMessage());
-        }
-    }
-}
+                        Order toCancel = orders.get(orderIndex);
+                        try {
+                            toCancel.cancelOrder();
+                            System.out.println("Order canceled successfully!");
+                        } catch (IllegalStateException e) {
+                            System.out.println("Cannot cancel this order: " + e.getMessage());
+                        }
+                    }
+                }
                 case 6 -> {
                     System.out.println("Exiting Customer Menu.");
                     return;
@@ -288,5 +275,4 @@ public class Main {
             }
         }
     }
-
 }

@@ -1,103 +1,211 @@
 package com.ecommerce;
 
-import com.ecommerce.model.product.Product;
+import com.ecommerce.model.user.User;
+import com.ecommerce.model.user.Admin;
 import com.ecommerce.model.user.Customer;
+import com.ecommerce.model.product.Product;
 import com.ecommerce.model.cart.CartItem;
 import com.ecommerce.model.order.Order;
 import com.ecommerce.payment.PaymentMethod;
 import com.ecommerce.payment.CreditCardPayment;
+import com.ecommerce.service.AuthService;
+import com.ecommerce.service.InventoryManager;
+
+import java.util.List;
+import java.util.Scanner;
+import java.util.UUID;
 
 public class Main {
 
     public static void main(String[] args) {
 
-        // ===============================
-        // Create Products
-        // ===============================
-        Product laptop = new Product("1", "Laptop", 1500, 10);
-        Product mouse = new Product("2", "Mouse", 50, 100);
-        Product keyboard = new Product("3", "Keyboard", 100, 50);
+        Scanner scanner = new Scanner(System.in);
+        AuthService authService = new AuthService();
+        InventoryManager inventoryManager = new InventoryManager();
 
-        System.out.println("=== Initial Stock ===");
-        System.out.println(laptop.getName() + ": " + laptop.getStock());
-        System.out.println(mouse.getName() + ": " + mouse.getStock());
-        System.out.println(keyboard.getName() + ": " + keyboard.getStock());
-        System.out.println();
+        // =========================
+        // Welcome Screen
+        // =========================
+        System.out.println("=== Welcome to E-Commerce System ===");
+        System.out.println("Choose an option:");
+        System.out.println("1- Register");
+        System.out.println("2- Login");
+        int option = scanner.nextInt();
+        scanner.nextLine(); // consume newline
 
+        User loggedUser = null;
 
-        // ===============================
-        // Create Customer
-        // ===============================
-        Customer customer = new Customer("Mostafa Ahmed", "mostafa@mail.com");
+        // =========================
+        // Register
+        // =========================
+        if (option == 1) {
+            System.out.println("Enter your name:");
+            String name = scanner.nextLine();
 
-        System.out.println("Customer: " + customer.getName());
-        System.out.println();
+            System.out.println("Enter your email:");
+            String email = scanner.nextLine();
 
+            System.out.println("Are you Admin? (yes/no):");
+            String role = scanner.nextLine();
 
-        // ===============================
-        //  Add Products To Cart
-        // ===============================
-        customer.getCart().addProduct(laptop, 2);
-        customer.getCart().addProduct(mouse, 3);
-        customer.getCart().addProduct(keyboard, 1);
+            if (role.equalsIgnoreCase("yes")) {
+                loggedUser = new Admin(name, email);
+            } else {
+                loggedUser = new Customer(name, email);
+            }
 
-        System.out.println("=== Cart Items ===");
-        for (CartItem item : customer.getCart().getItems()) {
-            System.out.println(
-                    item.getProduct().getName() +
-                            " x " + item.getQuantity() +
-                            " = " + item.getTotalPrice()
-            );
+            authService.register(loggedUser);
+            System.out.println("Registration successful!");
+        }
+        // =========================
+        // Login
+        // =========================
+        else if (option == 2) {
+            System.out.println("Enter your email to login:");
+            String email = scanner.nextLine();
+            loggedUser = authService.login(email);
         }
 
-        double cartTotal = customer.getCart().calculateTotal();
-        System.out.println("Cart Total: " + cartTotal);
-        System.out.println();
+        System.out.println("Logged in as: " + loggedUser.getName() + " | Role: " + loggedUser.getRole());
 
-
-        // ===============================
-        // Create Order From Cart
-        // ===============================
-        Order order = new Order(customer, customer.getCart().getItems());
-
-        System.out.println("Order Created.");
-        System.out.println("Order Status: " + order.getStatus());
-        System.out.println();
-
-
-        // ===============================
-        //  Process Payment (Auto Confirm)
-        // ===============================
-        PaymentMethod payment = new CreditCardPayment("1234-5678-9999");
-
-        try {
-            order.processPayment(payment);
-
-            System.out.println("Payment Successful!");
-            System.out.println("Order Status: " + order.getStatus());
-
-        } catch (Exception e) {
-            System.out.println("Payment Failed: " + e.getMessage());
+        // =========================
+        // Show Menu based on Role
+        // =========================
+        if (loggedUser.getRole().equals("ADMIN")) {
+            showAdminMenu(scanner, inventoryManager);
+        } else {
+            showCustomerMenu(scanner, (Customer) loggedUser, inventoryManager);
         }
 
-        System.out.println();
+    }
 
+    // =========================
+    // Admin Menu
+    // =========================
+    public static void showAdminMenu(Scanner scanner, InventoryManager inventoryManager) {
+        while (true) {
+            System.out.println("\n=== Admin Menu ===");
+            System.out.println("1- Add Product");
+            System.out.println("2- Restock Product");
+            System.out.println("3- Show Products");
+            System.out.println("4- Exit");
 
-        // ===============================
-        // Show Stock After Payment
-        // ===============================
-        System.out.println("=== Stock After Checkout ===");
-        System.out.println(laptop.getName() + ": " + laptop.getStock());
-        System.out.println(mouse.getName() + ": " + mouse.getStock());
-        System.out.println(keyboard.getName() + ": " + keyboard.getStock());
-        System.out.println();
+            int choice = scanner.nextInt();
+            scanner.nextLine();
 
+            switch (choice) {
+                case 1 -> {
+                    System.out.println("Enter product name:");
+                    String name = scanner.nextLine();
+                    System.out.println("Enter price:");
+                    double price = scanner.nextDouble();
+                    System.out.println("Enter stock:");
+                    int stock = scanner.nextInt();
+                    scanner.nextLine();
 
-        // ===============================
-        // Clear Cart
-        // ===============================
-        customer.getCart().clear();
-        System.out.println("Cart Cleared. Items Count: "
-                + customer.getCart().getItems().size());
+                    Product product = new Product(UUID.randomUUID().toString(), name, price, stock);
+                    inventoryManager.addProduct(product);
+                    System.out.println("Product added successfully!");
+                }
+                case 2 -> {
+                    System.out.println("Enter product ID to restock:");
+                    String id = scanner.nextLine();
+                    System.out.println("Enter quantity to add:");
+                    int quantity = scanner.nextInt();
+                    scanner.nextLine();
+
+                    inventoryManager.restockProduct(id, quantity);
+                    System.out.println("Product restocked successfully!");
+                }
+                case 3 -> {
+                    System.out.println("=== Products ===");
+                    for (Product p : inventoryManager.getAllProducts()) {
+                        System.out.println(p.getId() + " | " + p.getName() + " | Price: " + p.getPrice() + " | Stock: " + p.getStock());
+                    }
+                }
+                case 4 -> {
+                    System.out.println("Exiting Admin Menu.");
+                    return;
+                }
+                default -> System.out.println("Invalid choice!");
+            }
+        }
+    }
+
+    // =========================
+    // Customer Menu
+    // =========================
+    public static void showCustomerMenu(Scanner scanner, Customer customer, InventoryManager inventoryManager) {
+        while (true) {
+            System.out.println("\n=== Customer Menu ===");
+            System.out.println("1- Show Products");
+            System.out.println("2- Add Product to Cart");
+            System.out.println("3- View Cart");
+            System.out.println("4- Checkout");
+            System.out.println("5- Order History");
+            System.out.println("6- Exit");
+
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+
+            switch (choice) {
+                case 1 -> {
+                    System.out.println("=== Products ===");
+                    for (Product p : inventoryManager.getAllProducts()) {
+                        System.out.println(p.getId() + " | " + p.getName() + " | Price: " + p.getPrice() + " | Stock: " + p.getStock());
+                    }
+                }
+                case 2 -> {
+                    System.out.println("Enter product ID:");
+                    String id = scanner.nextLine();
+                    Product selected = null;
+                    for (Product p : inventoryManager.getAllProducts()) {
+                        if (p.getId().equals(id)) {
+                            selected = p;
+                            break;
+                        }
+                    }
+                    if (selected == null) {
+                        System.out.println("Product not found!");
+                        break;
+                    }
+                    System.out.println("Enter quantity:");
+                    int qty = scanner.nextInt();
+                    scanner.nextLine();
+                    customer.getCart().addProduct(selected, qty);
+                    System.out.println("Product added to cart!");
+                }
+                case 3 -> {
+                    System.out.println("=== Cart ===");
+                    List<CartItem> items = customer.getCart().getItems();
+                    for (CartItem item : items) {
+                        System.out.println(item.getProduct().getName() + " x " + item.getQuantity() + " = " + item.getTotalPrice());
+                    }
+                    System.out.println("Cart Total: " + customer.getCart().calculateTotal());
+                }
+                case 4 -> {
+                    if (customer.getCart().getItems().isEmpty()) {
+                        System.out.println("Cart is empty!");
+                        break;
+                    }
+                    Order order = new Order(customer, customer.getCart().getItems());
+                    PaymentMethod payment = new CreditCardPayment("1234-5678-9999");
+                    order.processPayment(payment);
+                    customer.getCart().clear();
+                    System.out.println("Checkout complete! Order Status: " + order.getStatus());
+                }
+                case 5 -> {
+                    System.out.println("=== Order History ===");
+                    for (Order o : customer.getOrderHistory()) {
+                        System.out.println("Order ID: " + o.getId() + " | Status: " + o.getStatus() + " | Total: " + o.getTotalPrice());
+                    }
+                }
+                case 6 -> {
+                    System.out.println("Exiting Customer Menu.");
+                    return;
+                }
+                default -> System.out.println("Invalid choice!");
+            }
+        }
     }
 }

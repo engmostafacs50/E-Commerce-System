@@ -32,6 +32,7 @@ public class Order {
         this.items = new ArrayList<>(cartItems) ; // Saving 
         this.createdAt = LocalDateTime.now() ; 
         calculateTotalPrice() ;
+        customer.addOrder(this);
     }
     public void confirmOrder()
     {

@@ -1,5 +1,9 @@
 package com.ecommerce.model.user;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ecommerce.model.cart.Cart;
+import com.ecommerce.model.order.Order;
 
 public class Customer extends User{
     private final  Cart cart ; 
@@ -17,5 +21,14 @@ public class Customer extends User{
     public Cart getCart() 
     {
         return cart;
+    }
+    private List<Order> orderHistory = new ArrayList<>();
+
+    public void addOrder(Order order) {
+     orderHistory.add(order);
+    }
+
+    public List<Order> getOrderHistory() {
+        return orderHistory;
     }
 }
